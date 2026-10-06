@@ -1,0 +1,50 @@
+name: Prepare Chromium Linux
+
+on:
+  workflow_dispatch:
+  push:
+    paths-ignore:
+      - "browsers/**"
+
+permissions:
+  contents: write
+
+jobs:
+  chromium:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Playwright
+        run: python -m pip install -r requirements.txt
+
+      - name: Install Chromium Linux
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/browsers
+        run: python -m playwright install chromium
+
+      - name: Configure Git LFS
+        run: |
+          git lfs install
+          git lfs track "browsers/**"
+          git add .gitattributes browsers
+
+      - name: Commit Chromium
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "Chromium déjà présent."
+            exit 0
+          fi
+          git commit -m "chore: add Linux Chromium for Playwright"
+          git push
