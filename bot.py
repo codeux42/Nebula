@@ -5,8 +5,6 @@ import json
 import logging
 import os
 import random
-import subprocess
-import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -947,26 +945,6 @@ class NebulaBot(discord.Client):
         await interaction.followup.send(f"Statut du site mis à jour : **{label}**.", ephemeral=True)
 
 
-def ensure_playwright_chromium() -> None:
-    """Installe Chromium si nécessaire sur un hébergement vierge (ex. DisHost)."""
-    logging.info("Vérification de l'installation du Chromium headless pour Playwright...")
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "playwright", "install", "--only-shell"],
-            check=False,
-        )
-    except OSError:
-        logging.exception("Impossible d'exécuter l'installation de Chromium.")
-        raise
-
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"L'installation de Chromium pour Playwright a échoué (code {result.returncode})."
-        )
-
-    logging.info("Chromium headless Playwright est prêt.")
-
-
 async def run() -> None:
     config = read_config()
     logging.basicConfig(
@@ -974,10 +952,11 @@ async def run() -> None:
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
 
-    # DisHost installe le paquet Python Playwright via requirements.txt,
-    # mais pas le navigateur Chromium. On l'installe donc depuis le bot
-    # avant le lancement de Playwright.
-    ensure_playwright_chromium()
+    # Chromium Linux est versionné dans le dépôt GitHub (Git LFS).
+    # Aucun téléchargement n'est effectué au démarrage du serveur.
+    browsers_path = ROOT / "browsers"
+    os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(browsers_path)
+    logging.info("Chromium Playwright local : %s", browsers_path)
 
     store = SeenStore(STATE_PATH)
     async with async_playwright() as playwright:
