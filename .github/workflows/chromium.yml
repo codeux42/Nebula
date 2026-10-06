@@ -34,12 +34,15 @@ jobs:
 
       - name: Build Antagonix ZIP
         run: |
-          zip -r nebula-antagonix.zip . -x ".git/*" "nebula-antagonix.zip"
+          rm -f nebula-antagonix.zip
+          zip -r nebula-antagonix.zip . \
+            -x ".git/*" ".github/*" ".env" ".env.*" "state.sqlite3" "state.sqlite3-*"
+            "nebula-antagonix.zip"
 
       - name: Upload Antagonix ZIP
         uses: actions/upload-artifact@v4
         with:
-          name: nebula-antagonix
+          name: nebula-antagonix-clean
           path: nebula-antagonix.zip
           retention-days: 7
 
